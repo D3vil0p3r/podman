@@ -26,7 +26,7 @@ Distribution defined quadlets:
 
 ### Podman rootless unit search path
 
-Quadlet files for non-root users can be placed in the following directories
+Quadlet files for non-root users can be placed in the following directories:
 
  * $XDG_RUNTIME_DIR/containers/systemd/
  * $XDG_CONFIG_HOME/containers/systemd/ or ~/.config/containers/systemd/
@@ -39,7 +39,7 @@ Quadlet supports using symbolic links for the base of the search paths and insid
 
 ## DESCRIPTION
 
-Podman supports building, and starting containers (and creating volumes) via systemd by using a
+Podman supports building and starting containers (and creating volumes) via systemd by using a
 [systemd generator](https://www.freedesktop.org/software/systemd/man/systemd.generator.html).
 These files are read during boot (and when `systemctl daemon-reload` is run) and generate
 corresponding regular systemd service unit files. Both system and user systemd units are supported.
@@ -73,7 +73,7 @@ For rootless containers, when administrators place Quadlet files in the
 /etc/containers/systemd/users directory, all users' sessions execute the
 Quadlet when the login session begins. If the administrator places a Quadlet
 file in the /etc/containers/systemd/users/${UID}/ directory, then only the
-user with the matching UID execute the Quadlet when the login
+user with the matching UID executes the Quadlet when the login
 session gets started. For unit files placed in subdirectories within
 /etc/containers/systemd/user/${UID}/ and the other user unit search paths,
 Quadlet will recursively search and run the unit files present in these subdirectories.
@@ -110,13 +110,13 @@ leaves the job in a "started" state which prevents subsequent activations by the
 
 Examples for such cases:
 - `.container` file with an image that exits after their entrypoint has finished
-``
+
 - `.kube` file pointing to a Kubernetes Yaml file that does not define any containers. E.g. PVCs only
 
 ### Enabling unit files
 
 The services created by Podman are considered transient by systemd, which means they don't have the same
-persistence rules as regular units. In particular, it is not possible to "systemctl enable" them
+persistence rules as regular units. In particular, it is not possible to `systemctl enable` them
 in order for them to become automatically enabled on the next boot.
 
 To compensate for this, the generator manually applies the `[Install]` section of the container definition
@@ -137,7 +137,7 @@ install an non-enabled unit and then later enabling it by installing
 the drop-in.
 
 
-**NOTE:** To express dependencies between containers, use the generated names of the service. In other
+**NOTE:** To express dependencies between containers, use the generated names of the services. In other
 words `WantedBy=other.service`, not `WantedBy=other.container`. The same is
 true for other kinds of dependencies, too, like `After=other.service`.
 
@@ -246,7 +246,7 @@ that limit the output to only the units you are debugging.
 
 ### Implicit network dependencies
 
-Quadlet will add dependencies on the `network-online.target` (as root) or `podman-user-wait-network-online.service`
+Quadlet will add dependencies on `network-online.target` (as root) or `podman-user-wait-network-online.service`
 (as user) by adding `After=` and `Wants=` properties to the unit. This is to ensure that the network is reachable
 if an image needs to be pulled and by the time the container is started.
 
@@ -332,6 +332,8 @@ Valid options for `[Container]` are listed below:
 | Pull=never                           | --pull never                                         |
 | ReadOnly=true                        | --read-only                                          |
 | ReadOnlyTmpfs=true                   | --read-only-tmpfs                                    |
+| Retry=5                              | --retry=5                                            |
+| RetryDelay=5s                        | --retry-delay=5s                                     |
 | Rootfs=/var/lib/rootfs               | --rootfs /var/lib/rootfs                             |
 | RunInit=true                         | --init                                               |
 | SeccompProfile=/tmp/s.json           | --security-opt seccomp=/tmp/s.json                   |
@@ -460,7 +462,7 @@ DropCapability=CAP_DAC_OVERRIDE CAP_IPC_OWNER
 
 Override the default ENTRYPOINT from the image.
 Equivalent to the Podman `--entrypoint` option.
-Specify multi option commands in the form of a json string.
+Specify multi option commands in the form of a JSON string.
 
 ### `Environment=`
 
@@ -522,7 +524,7 @@ This key can be listed multiple times.
 ### `Group=`
 
 The (numeric) GID to run as inside the container. This does not need to match the GID on the host,
-which can be modified with `UsersNS`, but if that is not specified, this GID is also used on the host.
+which can be modified with `UserNS`, but if that is not specified, this GID is also used on the host.
 
 ### `GroupAdd=`
 
@@ -781,6 +783,14 @@ If enabled, makes the image read-only.
 
 If ReadOnly is set to `true`, mount a read-write tmpfs on /dev, /dev/shm, /run, /tmp, and /var/tmp.
 
+### `Retry=`
+
+Number of times to retry the image pull when a HTTP error occurs. Equivalent to the Podman `--retry` option.
+
+### `RetryDelay=`
+
+Delay between retries. Equivalent to the Podman `--retry-delay` option.
+
 ### `Rootfs=`
 
 The rootfs to use for the container. Rootfs points to a directory on the system that contains the content to be run within the container. This option conflicts with the `Image` option.
@@ -789,7 +799,7 @@ The format of the rootfs is the same as when passed to `podman run --rootfs`, so
 
 Note: On SELinux systems, the rootfs needs the correct label, which is by default unconfined_u:object_r:container_file_t:s0.
 
-### `RunInit=` (default to `false`)
+### `RunInit=` (defaults to `false`)
 
 If enabled, the container has a minimal init process inside the
 container that forwards signals and reaps processes.
@@ -797,7 +807,7 @@ container that forwards signals and reaps processes.
 ### `SeccompProfile=`
 
 Set the seccomp profile to use in the container. If unset, the default podman profile is used.
-Set to either the pathname of a json file, or `unconfined` to disable the seccomp filters.
+Set to either the pathname of a JSON file, or `unconfined` to disable the seccomp filters.
 
 ### `Secret=`
 
@@ -1611,6 +1621,8 @@ Valid options for `[Build]` are listed below:
 | Network=host                        | --network=host                              |
 | PodmanArgs=--pull never             | --pull never                                |
 | Pull=never                          | --pull never                                |
+| Retry=5                             | --retry=5                                   |
+| RetryDelay=10s                      | --retry-delay=10s                           |
 | Secret=secret                       | --secret=id=mysecret,src=path               |
 | SetWorkingDirectory=unit            | Set `WorkingDirectory` of systemd unit file |
 | Target=my-app                       | --target=my-app                             |
@@ -1757,6 +1769,14 @@ Set the image pull policy.
 
 This is equivalent to the `--pull` option of `podman build`.
 
+### `Retry=`
+
+Number of times to retry the image pull when a HTTP error occurs. Equivalent to the Podman `--retry` option.
+
+### `RetryDelay=`
+
+Delay between retries. Equivalent to the Podman `--retry-delay` option.
+
 ### `Secret=`
 
 Pass secret information used in Containerfile build stages in a safe way.
@@ -1843,6 +1863,8 @@ Valid options for `[Image]` are listed below:
 | ImageTag=quay\.io/centos/centos:latest | Use this name when resolving `.image` references |
 | OS=windows                             | --os=windows                                     |
 | PodmanArgs=--os=linux                  | --os=linux                                       |
+| Retry=5                                | --retry=5                                        |
+| RetryDelay=10s                         | --retry-delay=10s                                |
 | TLSVerify=false                        | --tls-verify=false                               |
 | Variant=arm/v7                         | --variant=arm/v7                                 |
 
@@ -1940,6 +1962,14 @@ The format of this is a space separated list of arguments, which can optionally 
 escaped to allow inclusion of whitespace and other control characters.
 
 This key can be listed multiple times.
+
+### `Retry=`
+
+Number of times to retry the image pull when a HTTP error occurs. Equivalent to the Podman `--retry` option.
+
+### `RetryDelay=`
+
+Delay between retries. Equivalent to the Podman `--retry-delay` option.
 
 ### `TLSVerify=`
 
